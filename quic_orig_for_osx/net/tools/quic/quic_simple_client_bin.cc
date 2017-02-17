@@ -64,6 +64,17 @@
 #include "net/tools/quic/synchronous_host_resolver.h"
 #include "url/gurl.h"
 
+#define __HONEST_PERFORMANCE_CHECK__
+#ifdef __HONEST_PERFORMANCE_CHECK__
+#include <time.h>
+#include <sys/time.h>
+
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+#endif // __HONEST_PERFORMANCE_CHECK__
+
 using base::StringPiece;
 using net::CertVerifier;
 using net::CTPolicyEnforcer;
@@ -91,7 +102,7 @@ string FLAGS_body_hex = "";
 // A semicolon separated list of key:value pairs to add to request headers.
 string FLAGS_headers = "";
 // Set to true for a quieter output experience.
-bool FLAGS_quiet = false;
+bool FLAGS_quiet = true;
 // QUIC version to speak, e.g. 21. If not set, then all available versions are
 // offered in the handshake.
 int32_t FLAGS_quic_version = -1;
@@ -103,6 +114,11 @@ bool FLAGS_version_mismatch_ok = false;
 bool FLAGS_redirect_is_success = true;
 // Initial MTU of the connection.
 int32_t FLAGS_initial_mtu = 0;
+
+#ifdef __HONEST_PERFORMANCE_CHECK__
+int32_t FLAGS_iteration_num = 1;
+int32_t FLAGS_unit = 1;
+#endif // __HONEST_PERFORMANCE_CHECK__
 
 class FakeProofVerifier : public ProofVerifier {
  public:
@@ -132,6 +148,24 @@ class FakeProofVerifier : public ProofVerifier {
     return net::QUIC_SUCCESS;
   }
 };
+
+#ifdef __HONEST_PERFORMANCE_CHECK__
+bool honest_get_time(timespec& ts)
+{
+#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
+	clock_serv_t cclock;
+	mach_timespec_t mts;
+	host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+	clock_get_time(cclock, &mts);
+	mach_port_deallocate(mach_task_self(), cclock);
+	ts.tv_sec = mts.tv_sec;
+	ts.tv_nsec = mts.tv_nsec;
+#else
+	clock_gettime(CLOCK_REALTIME, &ts);
+#endif
+	return true;
+}
+#endif // __HONEST_PERFORMANCE_CHECK__
 
 int main(int argc, char* argv[]) {
   base::CommandLine::Init(argc, argv);
@@ -164,7 +198,9 @@ int main(int argc, char* argv[]) {
         "is considered to be a successful response, otherwise a failure\n"
         "--initial_mtu=<initial_mtu> specify the initial MTU of the connection"
         "\n"
-        "--disable-certificate-verification do not verify certificates\n";
+        "--disable-certificate-verification do not verify certificates\n"
+        "--iteration_num \n"
+        "--unit 1(ms),2(us),3(ns)\n";
     cout << help_str;
     exit(0);
   }
@@ -209,14 +245,40 @@ int main(int argc, char* argv[]) {
       return 1;
     }
   }
+#ifdef __HONEST_PERFORMANCE_CHECK__
+  if (line->HasSwitch("iteration_num")) {
+    if (!base::StringToInt(line->GetSwitchValueASCII("iteration_num"),
+                           &FLAGS_iteration_num)) {
+      std::cerr << "--initial_mtu must be an integer\n";
+      return 1;
+    }
+  }
+  if (line->HasSwitch("unit")) {
+    if (!base::StringToInt(line->GetSwitchValueASCII("unit"),
+                           &FLAGS_unit)) {
+      std::cerr << "--unit\n";
+      return 1;
+    }
+  }
+#endif //__HONEST_PERFORMANCE_CHECK__
 
+#ifndef __HONEST_PERFORMANCE_CHECK__
   VLOG(1) << "server host: " << FLAGS_host << " port: " << FLAGS_port
+#else
+  cout << "server host: " << FLAGS_host << " port: " << FLAGS_port
+#endif
           << " body: " << FLAGS_body << " headers: " << FLAGS_headers
           << " quiet: " << FLAGS_quiet
           << " quic-version: " << FLAGS_quic_version
           << " version_mismatch_ok: " << FLAGS_version_mismatch_ok
           << " redirect_is_success: " << FLAGS_redirect_is_success
-          << " initial_mtu: " << FLAGS_initial_mtu;
+#ifndef __HONEST_PERFORMANCE_CHECK__
+          << " initial_mtu: " << FLAGS_initial_mtu << endl;
+#else
+          << " initial_mtu: " << FLAGS_initial_mtu
+          << " iteration_num: " << FLAGS_iteration_num 
+          << " unit: " << FLAGS_unit << endl;
+#endif // __HONEST_PERFORMANCE_CHECK__
 
   base::AtExitManager exit_manager;
   base::MessageLoopForIO message_loop;
@@ -323,47 +385,78 @@ int main(int argc, char* argv[]) {
   client.set_store_response(true);
 
   // Send the request.
-  client.SendRequestAndWaitForResponse(header_block, body, /*fin=*/true);
+#ifdef __HONEST_PERFORMANCE_CHECK__
+  int cnt = 0;
+  uint64_t diff;
+  struct timespec start, end; 
+  #define BILLION 1000000000L
+  #define MILLION 1000000
+  #define THOUSAND 1000
+  while(FLAGS_iteration_num > cnt++) {
+	  honest_get_time(start);
+	  client.SendRequestAndWaitForResponse(header_block, body, /*fin=*/true);
+	  cout << "(" << cnt << "\t/" << FLAGS_iteration_num << ") ";
+#else
+	  client.SendRequestAndWaitForResponse(header_block, body, /*fin=*/true);
+#endif
+	  // Print request and response details.
+	  if (!FLAGS_quiet) {
+		  cout << "Request:" << endl;
+		  cout << "headers:" << header_block.DebugString();
+		  if (!FLAGS_body_hex.empty()) {
+			  // Print the user provided hex, rather than binary body.
+			  cout << "body:\n"
+				  << QuicTextUtils::HexDump(QuicTextUtils::HexDecode(FLAGS_body_hex))
+				  << endl;
+		  } else {
+			  cout << "body: " << body << endl;
+		  }
+		  cout << endl;
+		  cout << "Response:" << endl;
+		  cout << "headers: " << client.latest_response_headers() << endl;
+		  string response_body = client.latest_response_body();
+		  if (!FLAGS_body_hex.empty()) {
+			  // Assume response is binary data.
+			  cout << "body:\n" << QuicTextUtils::HexDump(response_body) << endl;
+		  } else {
+			  cout << "body: " << response_body << endl;
+		  }
+		  cout << "trailers: " << client.latest_response_trailers() << endl;
+	  }
 
-  // Print request and response details.
-  if (!FLAGS_quiet) {
-    cout << "Request:" << endl;
-    cout << "headers:" << header_block.DebugString();
-    if (!FLAGS_body_hex.empty()) {
-      // Print the user provided hex, rather than binary body.
-      cout << "body:\n"
-           << QuicTextUtils::HexDump(QuicTextUtils::HexDecode(FLAGS_body_hex))
-           << endl;
-    } else {
-      cout << "body: " << body << endl;
-    }
-    cout << endl;
-    cout << "Response:" << endl;
-    cout << "headers: " << client.latest_response_headers() << endl;
-    string response_body = client.latest_response_body();
-    if (!FLAGS_body_hex.empty()) {
-      // Assume response is binary data.
-      cout << "body:\n" << QuicTextUtils::HexDump(response_body) << endl;
-    } else {
-      cout << "body: " << response_body << endl;
-    }
-    cout << "trailers: " << client.latest_response_trailers() << endl;
-  }
+	  size_t response_code = client.latest_response_code();
+#ifdef __HONEST_PERFORMANCE_CHECK__
+	  honest_get_time(end);
+	  switch(FLAGS_unit) {
+		  case 1:
+			  diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+			  cout << "Elapsed time = " << (long long unsigned int)diff/MILLION << " ms. ";
+			  break;
+		  case 2:
+			  diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+			  cout << "Elapsed time = " << (long long unsigned int)diff/THOUSAND << " us. ";
+			  break;
+		  case 3:
+			  diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+			  cout << "Elapsed time = " << (long long unsigned int)diff << " ns. ";
+			  break;
+		  default:
+			  break;
+	  }
+#endif
 
-  size_t response_code = client.latest_response_code();
-  if (response_code >= 200 && response_code < 300) {
-    cout << "Request succeeded (" << response_code << ")." << endl;
-    return 0;
-  } else if (response_code >= 300 && response_code < 400) {
-    if (FLAGS_redirect_is_success) {
-      cout << "Request succeeded (redirect " << response_code << ")." << endl;
-      return 0;
-    } else {
-      cout << "Request failed (redirect " << response_code << ")." << endl;
-      return 1;
-    }
-  } else {
-    cerr << "Request failed (" << response_code << ")." << endl;
-    return 1;
+	  if (response_code >= 200 && response_code < 300) {
+		  cout << "Request succeeded (" << response_code << ")." << endl;
+	  } else if (response_code >= 300 && response_code < 400) {
+		  if (FLAGS_redirect_is_success) {
+			  cout << "Request succeeded (redirect " << response_code << ")." << endl;
+		  } else {
+			  cout << "Request failed (redirect " << response_code << ")." << endl;
+		  }
+	  } else {
+		  cerr << "Request failed (" << response_code << ")." << endl;
+	  }
+#ifdef __HONEST_PERFORMANCE_CHECK__
   }
+#endif
 }
