@@ -12,6 +12,9 @@
 #include "net/base/net_errors.h"
 #include "net/socket/udp_server_socket.h"
 
+// HONESTCHOI added it for debuggung 
+#include "net/quic/core/quic_utils.h"
+
 namespace net {
 
 QuicSimpleServerPacketWriter::QuicSimpleServerPacketWriter(
@@ -43,6 +46,7 @@ WriteResult QuicSimpleServerPacketWriter::WritePacketWithCallback(
 
 void QuicSimpleServerPacketWriter::OnWriteComplete(int rv) {
   DCHECK_NE(rv, ERR_IO_PENDING);
+ // QuicUtils::honest_print_backtrace("QuicSimpleServerPacketWriter::OnWriteComplete");
   write_blocked_ = false;
   WriteResult result(rv < 0 ? WRITE_STATUS_ERROR : WRITE_STATUS_OK, rv);
   if (!callback_.is_null()) {
@@ -61,6 +65,7 @@ bool QuicSimpleServerPacketWriter::IsWriteBlocked() const {
 }
 
 void QuicSimpleServerPacketWriter::SetWritable() {
+//  QuicUtils::honest_print_backtrace("QuicSimpleServerPacketWriter::SetWritable");
   write_blocked_ = false;
 }
 
@@ -73,6 +78,7 @@ WriteResult QuicSimpleServerPacketWriter::WritePacket(
   scoped_refptr<StringIOBuffer> buf(
       new StringIOBuffer(std::string(buffer, buf_len)));
   DCHECK(!IsWriteBlocked());
+//   QuicUtils::honest_print_backtrace("QuicSimpleServerPacketWriter::WritePacket");
   int rv;
   if (buf_len <= static_cast<size_t>(std::numeric_limits<int>::max())) {
     rv = socket_->SendTo(

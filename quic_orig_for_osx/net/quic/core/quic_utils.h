@@ -17,6 +17,9 @@
 #include "net/quic/platform/api/quic_export.h"
 #include "net/quic/platform/api/quic_socket_address.h"
 
+// HONESTCHOI added for debugging
+#include <execinfo.h> // honest_print_backtrace()
+
 namespace net {
 
 class QUIC_EXPORT_PRIVATE QuicUtils {
@@ -64,6 +67,9 @@ class QUIC_EXPORT_PRIVATE QuicUtils {
   static PeerAddressChangeType DetermineAddressChangeType(
       const QuicSocketAddress& old_address,
       const QuicSocketAddress& new_address);
+
+  // HONESTCHOI added for debugging
+  static void honest_print_backtrace(const std::string func_name);
 
  private:
   DISALLOW_COPY_AND_ASSIGN(QuicUtils);

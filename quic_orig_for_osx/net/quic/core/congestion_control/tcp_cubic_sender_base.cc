@@ -218,12 +218,21 @@ QuicBandwidth TcpCubicSenderBase::PacingRate(
   }
   const QuicBandwidth bandwidth =
       QuicBandwidth::FromBytesAndTimeDelta(GetCongestionWindow(), srtt);
+#if 0
   if (rate_based_sending_ && bytes_in_flight > GetCongestionWindow()) {
     // Rate based sending allows sending more than CWND, but reduces the pacing
     // rate when the bytes in flight is more than the CWND to 75% of bandwidth.
     return 0.75 * bandwidth;
   }
   return bandwidth * (InSlowStart() ? 2 : (no_prr_ && InRecovery() ? 1 : 1.25));
+#else
+  if (rate_based_sending_ && bytes_in_flight > GetCongestionWindow()) {
+    // Rate based sending allows sending more than CWND, but reduces the pacing
+    // rate when the bytes in flight is more than the CWND to 75% of bandwidth.
+    return 0.75 * bandwidth;
+  }
+  return bandwidth * (InSlowStart() ? 2 : (no_prr_ && InRecovery() ? 1 : 1.25));
+#endif
 }
 
 QuicBandwidth TcpCubicSenderBase::BandwidthEstimate() const {

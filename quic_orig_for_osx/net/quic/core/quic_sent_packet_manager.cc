@@ -139,7 +139,9 @@ void QuicSentPacketManager::SetFromConfig(const QuicConfig& config) {
       SetSendAlgorithm(kCubic);
     }
   }
-  using_pacing_ = !FLAGS_quic_disable_pacing_for_perf_tests;
+  // using_pacing_ = !FLAGS_quic_disable_pacing_for_perf_tests;
+  QUIC_DVLOG(1) << "HONESTCHOI using_pacing_ " << using_pacing_;
+  using_pacing_ = false;
 
   if (config.HasClientSentConnectionOption(k1CON, perspective_)) {
     send_algorithm_->SetNumEmulatedConnections(1);

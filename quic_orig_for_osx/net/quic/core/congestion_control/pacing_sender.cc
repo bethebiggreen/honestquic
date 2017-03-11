@@ -10,8 +10,13 @@ namespace net {
 namespace {
 
 // The estimated system alarm granularity.
+#if 0 //HONESTCHOI added
 static const QuicTime::Delta kAlarmGranularity =
     QuicTime::Delta::FromMilliseconds(1);
+#else
+static const QuicTime::Delta kAlarmGranularity =
+    QuicTime::Delta::FromMicroseconds(100);
+#endif
 
 // Configured maximum size of the burst coming out of quiescence.  The burst
 // is never larger than the current CWND in packets.
@@ -128,10 +133,15 @@ QuicTime::Delta PacingSender::TimeUntilSend(
 
   // If the next send time is within the alarm granularity, send immediately.
   if (ideal_next_packet_send_time_ > now + kAlarmGranularity) {
-    QUIC_DVLOG(1) << "Delaying packet: "
-                  << (ideal_next_packet_send_time_ - now).ToMicroseconds();
+    QuicTime::Delta artificial_delay = ideal_next_packet_send_time_ - now;
+    artificial_delay = artificial_delay*10;
+    QUIC_DVLOG(1) << "Delaying packet: Org:"
+                  << (ideal_next_packet_send_time_ - now).ToMicroseconds()
+                  << "HONESTCHOI modified packet:"
+                  << (artificial_delay).ToMicroseconds();
     was_last_send_delayed_ = true;
-    return ideal_next_packet_send_time_ - now;
+    // return ideal_next_packet_send_time_ - now;
+    return artificial_delay;
   }
 
   QUIC_DVLOG(1) << "Sending packet now";

@@ -223,4 +223,26 @@ PeerAddressChangeType QuicUtils::DetermineAddressChangeType(
   return IPV4_TO_IPV4_CHANGE;
 }
 
+// HONESTCHOI added it for debugging 
+void QuicUtils::honest_print_backtrace(const std::string func_name)
+{
+	printf("[%s][%d] called by [%s]\n", __FUNCTION__, __LINE__, func_name.c_str());
+	int j, nptrs;
+#define SIZE 100
+	void* buffer[100];
+	char **strings;
+	nptrs = backtrace(buffer, SIZE);
+
+	strings = backtrace_symbols(buffer, nptrs);
+	if(!strings) {
+		printf("[%s][%d] ERROR on BACKTRACE\n", __FUNCTION__, __LINE__);
+		return;
+	}
+
+	for(j = 0; j < nptrs;j++)
+		printf("%s\n", strings[j]);
+
+	free(strings);
+}
+
 }  // namespace net

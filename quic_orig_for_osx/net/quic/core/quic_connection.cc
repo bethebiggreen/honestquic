@@ -1456,12 +1456,31 @@ bool QuicConnection::CanWrite(HasRetransmittableData retransmittable) {
   }
 
   // If the scheduler requires a delay, then we can not send this packet now.
+#if 1
   if (!delay.IsZero()) {
-    send_alarm_->Update(now + delay, QuicTime::Delta::FromMilliseconds(1));
-    QUIC_DVLOG(1) << ENDPOINT << "Delaying sending " << delay.ToMilliseconds()
-                  << "ms";
+	  send_alarm_->Update(now + delay, QuicTime::Delta::FromMilliseconds(1));
+	  QUIC_DVLOG(1) << ENDPOINT << "Delaying sending " << delay.ToMilliseconds()
+		  << "ms";
+	  return false;
+  }
+#else 
+  if (!delay.IsZero()) {
+	  send_alarm_->Update(now + delay, QuicTime::Delta::FromMicroseconds(100));
+	  QUIC_DVLOG(1) << ENDPOINT << "Delaying sending " << delay.ToMilliseconds()
+		  << "ms";
+	  return false;
+  }
+#endif
+
+  // HONESTCHOI add to control
+#if 0
+  static int force_pacing_control = 0;
+  if (force_pacing_control++ > 100 && force_pacing_control%9 == 0) {
+    QUIC_DVLOG(1) << "HONESTCHOI returns false for controlling rate." ;
     return false;
   }
+#endif
+
   return true;
 }
 

@@ -41,7 +41,18 @@ TcpCubicSenderBytes::TcpCubicSenderBytes(
                                      kDefaultTCPMSS),
       initial_max_tcp_congestion_window_(max_congestion_window *
                                          kDefaultTCPMSS),
+#if 0 // HONESTCHOI added it for debugging
       min_slow_start_exit_window_(min_congestion_window_) {}
+#else
+      min_slow_start_exit_window_(min_congestion_window_) {
+        HONEST_FATAL << "initial_max_tcp_congestion_window_ " << initial_max_tcp_congestion_window_;
+        HONEST_FATAL << "initial_tcp_congestion_window_ " << initial_tcp_congestion_window_;
+        HONEST_FATAL << "max_congestion_window_ " << max_congestion_window_;
+        HONEST_FATAL << "min_congestion_window_ " << min_congestion_window_;
+        HONEST_FATAL << "slowstart_threshold_ " << slowstart_threshold_;
+        HONEST_FATAL << "rate_based_sending_ " << rate_based_sending_;
+      }
+#endif
 
 TcpCubicSenderBytes::~TcpCubicSenderBytes() {}
 
@@ -79,11 +90,13 @@ void TcpCubicSenderBytes::SetCongestionWindowFromBandwidthAndRtt(
 void TcpCubicSenderBytes::SetCongestionWindowInPackets(
     QuicPacketCount congestion_window) {
   congestion_window_ = congestion_window * kDefaultTCPMSS;
+  HONEST_FATAL << "congestion_window_ " << congestion_window_;
 }
 
 void TcpCubicSenderBytes::SetMinCongestionWindowInPackets(
     QuicPacketCount congestion_window) {
   min_congestion_window_ = congestion_window * kDefaultTCPMSS;
+  HONEST_FATAL << "min_congestion_window_ " << min_congestion_window_;
 }
 
 void TcpCubicSenderBytes::SetNumEmulatedConnections(int num_connections) {
@@ -98,6 +111,7 @@ void TcpCubicSenderBytes::ExitSlowstart() {
 void TcpCubicSenderBytes::OnPacketLost(QuicPacketNumber packet_number,
                                        QuicByteCount lost_bytes,
                                        QuicByteCount prior_in_flight) {
+  HONEST_FATAL << "Packet Loss" ;
   // TCP NewReno (RFC6582) says that once a loss occurs, any losses in packets
   // already sent should be treated as a single loss event, since it's expected.
   if (packet_number <= largest_sent_at_last_cutback_) {
