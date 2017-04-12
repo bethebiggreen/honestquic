@@ -22,32 +22,15 @@
 // HONESTCHOI added it due to honest_conf_setup()
 #include "net/quic/core/quic_utils.h"
 
-// The port the quic server will listen on.
-int32_t FLAGS_port = 6121;
-
-// HONEST added below for debugging
-#if 1
+// HONESTCHOI added below four header files for dumping debug messages to memory           
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-extern char g_honest_buf[300*1024*1024];
-extern uint64_t g_honest_buf_idx;
-void honest_sigint_handler(int s) {
-  g_honest_buf[g_honest_buf_idx++] = '\n';
-  g_honest_buf[g_honest_buf_idx] = 0; 
-  FILE* fp = fopen("s.txt", "w");
-  if(fp) {
-    fwrite(g_honest_buf, g_honest_buf_idx,1, fp);
-	// fprintf(fp, "%s", g_honest_buf);
-    fclose(fp);
-	fp = NULL;
-  } else {
-	printf("fopen fails\n");
-  }
-  exit(1);
-}
-#endif
+
+// The port the quic server will listen on.
+int32_t FLAGS_port = 6121;
+
 
 std::unique_ptr<net::ProofSource> CreateProofSource(
     const base::FilePath& cert_path,
@@ -59,9 +42,9 @@ std::unique_ptr<net::ProofSource> CreateProofSource(
 }
 
 int main(int argc, char* argv[]) {
-  // HONEST added below for debugging
+  // HONESTCHOI added belows for dumping debug messages to memory           
   struct sigaction sig_int_handler;
-  sig_int_handler.sa_handler = honest_sigint_handler;
+  sig_int_handler.sa_handler = net::QuicUtils::honest_sigint_handler;
   sigemptyset(&sig_int_handler.sa_mask);
   sig_int_handler.sa_flags = 0;
   sigaction(SIGINT, &sig_int_handler, NULL);

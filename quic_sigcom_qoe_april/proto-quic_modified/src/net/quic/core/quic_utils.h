@@ -19,6 +19,7 @@
 
 // HONESTCHOI added it due to honest_conf_setup()
 #include <cstdio>
+#define HONEST_DBG_MSG_BUF_SIZE 300*1024*1024 // 300MB 
 
 namespace net {
 
@@ -76,6 +77,7 @@ class QUIC_EXPORT_PRIVATE QuicUtils {
   static uint32_t honest_Granularity;
 
   static int honest_conf_setup(void);
+  static void honest_sigint_handler(int s);
   // HONESTCHOI added above                              
 
  private:

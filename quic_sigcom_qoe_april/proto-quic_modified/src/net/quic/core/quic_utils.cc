@@ -14,8 +14,11 @@
 #include "net/quic/core/quic_flags.h"
  
 
-// HONESTCHOI added for debugging                                                                                                                                                        
+// HONESTCHOI added for debugging            
+#include "net/quic/platform/api/quic_logging.h"
 #include <execinfo.h> // honest_print_backtrace()
+extern char g_honest_buf[HONEST_DBG_MSG_BUF_SIZE];
+extern uint64_t g_honest_buf_idx;
 
 using std::string;
 
@@ -307,7 +310,32 @@ int QuicUtils::honest_conf_setup(void)
     QuicUtils::honest_Granularity
   );
 
+  HONEST_FATAL << "honest_DefaultMaxPacketSize:" << QuicUtils::honest_DefaultMaxPacketSize;
+  HONEST_FATAL << "honest_MaxPacketSize:" << QuicUtils::honest_MaxPacketSize;
+  HONEST_FATAL << "honest_MtuDiscoveryTargetPacketSizeHigh:" << QuicUtils::honest_MtuDiscoveryTargetPacketSizeHigh;
+  HONEST_FATAL << "honest_MtuDiscoveryTargetPacketSizeLow:" << QuicUtils::honest_MtuDiscoveryTargetPacketSizeLow;
+  HONEST_FATAL << "honest_DefaultNumConnections:" << QuicUtils::honest_DefaultNumConnections;
+  HONEST_FATAL << "honest_PacingRate:" << QuicUtils::honest_PacingRate;
+  HONEST_FATAL << "honest_UsingPacing:" << QuicUtils::honest_UsingPacing;
+  HONEST_FATAL << "honest_Granularity:" << QuicUtils::honest_Granularity;
   return 1;
+}
+
+// HONEST added below for debugging
+void QuicUtils::honest_sigint_handler(int s)
+{
+  g_honest_buf[g_honest_buf_idx++] = '\n';
+  g_honest_buf[g_honest_buf_idx] = 0; 
+  FILE* fp = fopen("s.txt", "w");
+  if(fp) {
+    fwrite(g_honest_buf, g_honest_buf_idx,1, fp);
+	// fprintf(fp, "%s", g_honest_buf);
+    fclose(fp);
+	fp = NULL;
+  } else {
+	printf("fopen fails\n");
+  }
+  exit(1);
 }
 
 }  // namespace net
