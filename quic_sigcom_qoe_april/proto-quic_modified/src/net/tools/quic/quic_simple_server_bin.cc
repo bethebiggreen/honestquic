@@ -25,6 +25,30 @@
 // The port the quic server will listen on.
 int32_t FLAGS_port = 6121;
 
+// HONEST added below for debugging
+#if 1
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+extern char g_honest_buf[300*1024*1024];
+extern uint64_t g_honest_buf_idx;
+void honest_sigint_handler(int s) {
+  g_honest_buf[g_honest_buf_idx++] = '\n';
+  g_honest_buf[g_honest_buf_idx] = 0; 
+  FILE* fp = fopen("s.txt", "w");
+  if(fp) {
+    fwrite(g_honest_buf, g_honest_buf_idx,1, fp);
+	// fprintf(fp, "%s", g_honest_buf);
+    fclose(fp);
+	fp = NULL;
+  } else {
+	printf("fopen fails\n");
+  }
+  exit(1);
+}
+#endif
+
 std::unique_ptr<net::ProofSource> CreateProofSource(
     const base::FilePath& cert_path,
     const base::FilePath& key_path) {
@@ -35,6 +59,13 @@ std::unique_ptr<net::ProofSource> CreateProofSource(
 }
 
 int main(int argc, char* argv[]) {
+  // HONEST added below for debugging
+  struct sigaction sig_int_handler;
+  sig_int_handler.sa_handler = honest_sigint_handler;
+  sigemptyset(&sig_int_handler.sa_mask);
+  sig_int_handler.sa_flags = 0;
+  sigaction(SIGINT, &sig_int_handler, NULL);
+
   base::AtExitManager exit_manager;
   base::MessageLoopForIO message_loop;
 

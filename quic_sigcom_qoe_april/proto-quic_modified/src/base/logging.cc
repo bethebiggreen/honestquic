@@ -74,6 +74,10 @@ typedef pthread_mutex_t* MutexHandle;
 #if defined(OS_ANDROID)
 #include <android/log.h>
 #endif
+#if 1 // HONEST added it due to performance of debug message
+BASE_EXPORT char g_honest_buf[300*1024*1024];
+BASE_EXPORT uint64_t g_honest_buf_idx = 0;
+#endif 
 
 namespace logging {
 
@@ -687,14 +691,24 @@ LogMessage::~LogMessage() {
     }
     __android_log_write(priority, "chromium", str_newline.c_str());
 #endif
+#if 0
     ignore_result(fwrite(str_newline.data(), str_newline.size(), 1, stderr));
     fflush(stderr);
+#else
+    ignore_result(strncpy(g_honest_buf+g_honest_buf_idx, str_newline.data(), str_newline.size()));
+    g_honest_buf_idx += (str_newline.size());
+#endif
   } else if (severity_ >= kAlwaysPrintErrorLevel) {
     // When we're only outputting to a log file, above a certain log level, we
     // should still output to stderr so that we can better detect and diagnose
     // problems with unit tests, especially on the buildbots.
+#if 0
     ignore_result(fwrite(str_newline.data(), str_newline.size(), 1, stderr));
     fflush(stderr);
+#else
+    ignore_result(strncpy(g_honest_buf+g_honest_buf_idx, str_newline.data(), str_newline.size()));
+    g_honest_buf_idx += (str_newline.size());
+#endif
   }
 
   // write to log file

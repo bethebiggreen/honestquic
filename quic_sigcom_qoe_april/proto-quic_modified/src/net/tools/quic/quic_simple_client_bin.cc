@@ -92,7 +92,31 @@ using std::cerr;
 using std::endl;
 using std::string;
 
-//
+
+// HONEST added below for debugging
+#if 1
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+extern char g_honest_buf[80*1024*1024];
+extern uint64_t g_honest_buf_idx;
+void honest_sigint_handler(int s) {
+  g_honest_buf[g_honest_buf_idx++] = '\n';
+  g_honest_buf[g_honest_buf_idx] = 0; 
+  FILE* fp = fopen("c.txt", "w");
+  if(fp) {
+    fwrite(g_honest_buf, g_honest_buf_idx,1, fp);
+	// fprintf(fp, "%s", g_honest_buf);
+    fclose(fp);
+	fp = NULL;
+  } else {
+	cout << "fopen fails" << endl;
+  }
+  exit(1);
+}
+#endif
+
 // The IP or hostname the quic client will connect to.
 string FLAGS_host = "";
 // The port to connect to.
@@ -171,6 +195,13 @@ bool honest_get_time(timespec& ts)
 }
 #endif // __HONEST_PERFORMANCE_CHECK__
 int main(int argc, char* argv[]) {
+  // HONEST added below for debugging
+  struct sigaction sig_int_handler;
+  sig_int_handler.sa_handler = honest_sigint_handler;
+  sigemptyset(&sig_int_handler.sa_mask);
+  sig_int_handler.sa_flags = 0;
+  sigaction(SIGINT, &sig_int_handler, NULL);
+
   base::CommandLine::Init(argc, argv);
   base::CommandLine* line = base::CommandLine::ForCurrentProcess();
   const base::CommandLine::StringVector& urls = line->GetArgs();
