@@ -34,5 +34,9 @@
 # Swap
 *.swp
 
+# Resources
+*.txt
+*.pyc
+
 # Output
 out

@@ -20,6 +20,7 @@
 // HONESTCHOI added it due to honest_conf_setup()
 #include <cstdio>
 #define HONEST_DBG_MSG_BUF_SIZE 300*1024*1024 // 300MB 
+#define HONEST_MAX_FILE_NAME 1024
 
 namespace net {
 
@@ -75,6 +76,9 @@ class QUIC_EXPORT_PRIVATE QuicUtils {
   static float honest_PacingRate;
   static int honest_UsingPacing;
   static uint32_t honest_Granularity;
+  static uint32_t honest_ExperimentSeq;
+  static char honest_ProcessName[HONEST_MAX_FILE_NAME];
+  static int32_t honest_UsingHonestFatal;
 
   static int honest_conf_setup(void);
   static void honest_sigint_handler(int s);

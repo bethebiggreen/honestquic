@@ -28,6 +28,11 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#if 1 // HONESTCHOI added it for debugging
+int32_t FLAGS_experiment_seq = 0;
+int32_t FLAGS_using_honest_fatal = 1;
+#endif
+
 // The port the quic server will listen on.
 int32_t FLAGS_port = 6121;
 
@@ -49,6 +54,7 @@ int main(int argc, char* argv[]) {
   sig_int_handler.sa_flags = 0;
   sigaction(SIGINT, &sig_int_handler, NULL);
 
+  strncpy(net::QuicUtils::honest_ProcessName, argv[0], 1024);
   base::AtExitManager exit_manager;
   base::MessageLoopForIO message_loop;
 
@@ -59,7 +65,6 @@ int main(int argc, char* argv[]) {
   settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
   CHECK(logging::InitLogging(settings));
 
-  net::QuicUtils::honest_conf_setup(); // HONESTCHOI added it
 
   if (line->HasSwitch("h") || line->HasSwitch("help")) {
     const char* help_str =
@@ -98,6 +103,26 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << "missing --key_file";
     return 1;
   }
+
+#if 1 // HONESTCHOI added it for debugging
+  if (line->HasSwitch("experiment_seq")) {
+    if (!base::StringToInt(line->GetSwitchValueASCII("experiment_seq"),
+                           &FLAGS_experiment_seq)) {
+      std::cerr << "--experiment_seq\n";
+      return 1;
+    }
+	net::QuicUtils::honest_ExperimentSeq = FLAGS_experiment_seq;
+  }
+  if (line->HasSwitch("using_honest_fatal")) {
+    if (!base::StringToInt(line->GetSwitchValueASCII("using_honest_fatal"),
+                           &FLAGS_using_honest_fatal)) {
+      std::cerr << "--using_honest_fatal\n";
+      return 1;
+    }
+	net::QuicUtils::honest_UsingHonestFatal = FLAGS_using_honest_fatal;
+  }
+#endif
+  net::QuicUtils::honest_conf_setup(); // HONESTCHOI added it
 
   net::IPAddress ip = net::IPAddress::IPv6AllZeros();
 

@@ -129,6 +129,11 @@ int32_t FLAGS_unit = 1;
 int32_t FLAGS_interval_msec = 0;
 #endif // __HONEST_PERFORMANCE_CHECK__
 
+#if 1 // HONESTCHOI added it for debugging
+int32_t FLAGS_experiment_seq = 0;
+int32_t FLAGS_using_honest_fatal = 1;
+#endif
+
 class FakeProofVerifier : public ProofVerifier {
  public:
   net::QuicAsyncStatus VerifyProof(
@@ -182,6 +187,7 @@ int main(int argc, char* argv[]) {
   sigemptyset(&sig_int_handler.sa_mask);
   sig_int_handler.sa_flags = 0;
   sigaction(SIGINT, &sig_int_handler, NULL);
+  strncpy(net::QuicUtils::honest_ProcessName, argv[0], HONEST_MAX_FILE_NAME);
 
   base::CommandLine::Init(argc, argv);
   base::CommandLine* line = base::CommandLine::ForCurrentProcess();
@@ -190,7 +196,6 @@ int main(int argc, char* argv[]) {
   logging::LoggingSettings settings;
   settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
   CHECK(logging::InitLogging(settings));
-  net::QuicUtils::honest_conf_setup();
   if (line->HasSwitch("h") || line->HasSwitch("help") || urls.empty()) {
     const char* help_str =
         "Usage: quic_client [options] <url>\n"
@@ -285,6 +290,27 @@ int main(int argc, char* argv[]) {
   }
 #endif //__HONEST_PERFORMANCE_CHECK__
 
+#if 1 // HONESTCHOI added it for debugging
+  if (line->HasSwitch("experiment_seq")) {
+    if (!base::StringToInt(line->GetSwitchValueASCII("experiment_seq"),
+                           &FLAGS_experiment_seq)) {
+      std::cerr << "--experiment_seq\n";
+      return 1;
+    }
+	net::QuicUtils::honest_ExperimentSeq = FLAGS_experiment_seq;
+  }
+  if (line->HasSwitch("using_honest_fatal")) {
+    if (!base::StringToInt(line->GetSwitchValueASCII("using_honest_fatal"),
+                           &FLAGS_using_honest_fatal)) {
+      std::cerr << "--using_honest_fatal\n";
+      return 1;
+    }
+	net::QuicUtils::honest_UsingHonestFatal = FLAGS_using_honest_fatal;
+  }
+#endif
+
+  net::QuicUtils::honest_conf_setup();
+
 #ifndef __HONEST_PERFORMANCE_CHECK__
   VLOG(1) << "server host: " << FLAGS_host << " port: " << FLAGS_port
 #else
@@ -301,7 +327,8 @@ int main(int argc, char* argv[]) {
           << " initial_mtu: " << FLAGS_initial_mtu
           << " iteration_num: " << FLAGS_iteration_num 
           << " unit: " << FLAGS_unit  
-          << " interval_msec: " << FLAGS_interval_msec << endl;
+          << " interval_msec: " << FLAGS_interval_msec  
+		  << " expermient_seq: " << FLAGS_experiment_seq << endl;
 #endif // __HONEST_PERFORMANCE_CHECK__
 
   base::AtExitManager exit_manager;

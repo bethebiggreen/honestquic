@@ -17,10 +17,12 @@
 // HONESTCHOI added for debugging            
 #include "net/quic/platform/api/quic_logging.h"
 #include <execinfo.h> // honest_print_backtrace()
+#include <iomanip>
 extern char g_honest_buf[HONEST_DBG_MSG_BUF_SIZE];
 extern uint64_t g_honest_buf_idx;
 
 using std::string;
+using namespace std;
 
 uint32_t net::QuicUtils::honest_DefaultMaxPacketSize = 0;
 uint32_t net::QuicUtils::honest_MaxPacketSize = 0;
@@ -30,6 +32,9 @@ uint32_t net::QuicUtils::honest_DefaultNumConnections = 0;
 float net::QuicUtils::honest_PacingRate = 0.0;
 int net::QuicUtils::honest_UsingPacing = 0.0;
 uint32_t net::QuicUtils::honest_Granularity = 0;
+uint32_t net::QuicUtils::honest_ExperimentSeq = 0; 
+char net::QuicUtils::honest_ProcessName[HONEST_MAX_FILE_NAME] = {0,};
+int32_t net::QuicUtils::honest_UsingHonestFatal = 1;
 
 namespace net {
 namespace {
@@ -326,7 +331,48 @@ void QuicUtils::honest_sigint_handler(int s)
 {
   g_honest_buf[g_honest_buf_idx++] = '\n';
   g_honest_buf[g_honest_buf_idx] = 0; 
-  FILE* fp = fopen("s.txt", "w");
+  // Call me maybe ~! 
+  // ProcessName-MM-DD-SEQ-HH-MM-NumCon_2-PacingRate_1.25-UsingPacing_1-Gra_1-DMPS_1450-MPS_1530-MDTPSH_1450-MDTPSL-1430
+  std::ostringstream file_name;
+  std::string tmp = QuicUtils::honest_ProcessName;
+  std::string process_name = tmp.substr(tmp.find_last_of('/')+1);
+  timeval tv;
+  gettimeofday(&tv, nullptr);
+  time_t t = tv.tv_sec;
+  struct tm local_time;
+  localtime_r(&t, &local_time);
+  struct tm* tm_time = &local_time;
+  file_name << process_name.c_str()
+            << '-'
+	        << std::setfill('0')
+            << std::setw(2) << 1 + tm_time->tm_mon
+            << std::setw(2) << tm_time->tm_mday
+            << '-'
+            << std::setw(2) << honest_ExperimentSeq
+            << '-'
+            << std::setw(2) << tm_time->tm_hour
+            << std::setw(2) << tm_time->tm_min
+            << '-'
+			<< "NumCon_" << QuicUtils::honest_DefaultNumConnections
+            << '-'
+			<< "PacingRate_" << QuicUtils::honest_PacingRate
+            << '-'
+			<< "UsingPacing_" << QuicUtils::honest_UsingPacing
+            << '-'
+			<< "Gra_" << QuicUtils::honest_Granularity
+            << '-'
+			<< "DMPS_" << QuicUtils::honest_DefaultMaxPacketSize
+            << '-'
+			<< "MPS_" << QuicUtils::honest_MaxPacketSize
+            << '-'
+			<< "MDTPSH_" << QuicUtils::honest_MtuDiscoveryTargetPacketSizeHigh
+            << '-'
+			<< "MDTPSL_" << QuicUtils::honest_MtuDiscoveryTargetPacketSizeLow
+			<< ".txt" ;
+
+  printf("file_path:%s \n", file_name.str().c_str());
+  FILE* fp = fopen(file_name.str().c_str(), "w");
+
   if(fp) {
     fwrite(g_honest_buf, g_honest_buf_idx,1, fp);
 	// fprintf(fp, "%s", g_honest_buf);
