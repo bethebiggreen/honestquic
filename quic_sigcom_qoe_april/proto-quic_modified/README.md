@@ -19,22 +19,23 @@ Building on Linux
    gn gen out/Default && ninja -C out/Default quic_client quic_server
    ```
 
+
 Newly Added Command Line Options
 --------------------------------
 1. (only quic_client) --iteration_num=1,2,3, ... N
-   It indicates the number of request. 
+   - It indicates the number of request. 
 
 2. (only quic_client) --unit=1 or 2 or 3
-   A scale of time that elpased for downloading. 1 for milleseconds, 2 for microseconds and 3 for nanosecods unit.  
+   - A scale of time that elpased for downloading. 1 for milleseconds, 2 for microseconds and 3 for nanosecods unit.  
 
 3. (only quic_client) --interval_msec=100
-   The interval for assigned milleseconds between each iteration. 
+   - The interval for assigned milleseconds between each iteration. 
 
 4. --experiment_seq=1 or 2, ... Nth number
-   Assigining sequence nummber in order to distinguish expermients. This number will be writeen in file name.
+   - Assigining sequence nummber in order to distinguish expermients. This number will be writeen in file name.
     
 5. --using_honest_fatal=1 or 0
-   HONEST_FATAL logs are suppressed by setting 0.
+   - HONEST_FATAL logs are suppressed by setting 0.
 
 
 honest.conf 
@@ -52,3 +53,17 @@ honest.conf
    ```
 
 
+Command Line Examples
+---------------------
+1. quic_server
+   ```
+   taskset 0x2 ./out/Default/quic_server --quic_response_cache_dir=/tmp/quic-data/www.example.org \
+   --certificate_file=net/tools/quic/certs/out/leaf_cert.pem --key_file=net/tools/quic/certs/out/leaf_cert.pkcs8  \
+   --port=50002 --experiment_seq=4 --using_honest_fatal=1
+   ```
+
+2. quic_client
+   ```
+   taskset 0x4 ./out/Default/quic_client --host=127.0.0.1 --port=50002 https://www.example.org/mov.mov \
+   --disable-certificate-verification --iteration_num=10 --unit=2 --experiment_seq=4 --using_honest_fatal=1
+   ```
