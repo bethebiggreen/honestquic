@@ -26,7 +26,7 @@ Newly Added Command Line Options
    - It indicates the number of request. 
 
 2. (only quic_client) --unit=1 or 2 or 3
-   - A scale of time that elpased for downloading. 1 for milleseconds, 2 for microseconds and 3 for nanosecods unit.  
+   - A scale of time that elapsed for downloading. 1 for milleseconds, 2 for microseconds and 3 for nanosecods unit.  
 
 3. (only quic_client) --interval_msec=100
    - The interval for assigned milleseconds between each iteration. 
@@ -67,3 +67,13 @@ Command Line Examples
    taskset 0x4 ./out/Default/quic_client --host=127.0.0.1 --port=50002 https://www.example.org/mov.mov \
    --disable-certificate-verification --iteration_num=10 --unit=2 --experiment_seq=4 --using_honest_fatal=1
    ```
+   
+Log File Name
+-------------
+1. It is generated automatically.
+2. File name is represented straightforwardly. 
+3. 'Process Name - MonthDay - Given Seq - HourMin - Values from honest.conf' are used as belows.
+```
+quic_server-0412-04-2303-NumCon_1-PacingRate_1.25-UsingPacing_1-Gra_100-DMPS_1350-MPS_1452-MDTPSH_1450-MDTPSL_1430.txt
+quic_client-0412-01-2259-NumCon_1-PacingRate_1.25-UsingPacing_1-Gra_100-DMPS_1350-MPS_1452-MDTPSH_1450-MDTPSL_1430.txt
+```
