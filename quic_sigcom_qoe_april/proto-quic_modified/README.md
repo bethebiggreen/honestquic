@@ -1,46 +1,54 @@
-proto-quic
-==========
-
-proto-quic is intended as a standalone library for [QUIC](https://www.chromium.org/quic).
-
-It contains the subset of Chromium code and dependencies required for QUIC so
-folks can use the Chromium code without depending on all of Chromium.  It is
-intended to be a cross-platform library, but will only support the set (or a
-strict subset) of platforms which Chromium already supports.
-
-This is *not* an officially supported Google product.  It's being kept up to
-date (on a theoretical weekly basis) as a best-effort side-project by some of
-the current QUIC developers. Worst case, should Google's priorities change about
-supporting a standalone QUIC library, it's all open source and any interested
-community can just clone the repo and continue updates on their own.
-
-Currently, the only supported platform is Linux (and the only tested version is
-Google's Ubuntu clone) but Windows and iOS should be coming soon.
+Quick Description for Modified 'proto-quic'
+===========================================
 
 Building on Linux
 -----------------
 
-0. Clone this repository:
+1. Clone this repository:
    ```
-   git clone https://github.com/google/proto-quic.git
-   cd proto-quic
-   export PROTO_QUIC_ROOT=`pwd`/src
-   export PATH=$PATH:`pwd`/depot_tools
-   ./proto_quic_tools/sync.sh
-   ```
-
-1. If you're building for the first time, install dependencies:
-   ```
-   ./src/build/install-build-deps.sh
+   git clone https://github.com/bethebiggreen/honestquic.git
+   cd honestquic/quic_sigcom_qoe_april/proto-quic_modified/
+   export PROTO_QUIC_ROOT=$PWD/src
+   export PATH=$PATH:$PWD/depot_tools
+   export CHROMIUM_BUILDTOOLS_PATH=$PROTO_QUIC_ROOT/buildtools
    ```
 
 2. Build the QUIC client, server, and tests:
    ```
    cd src
-   gn gen out/Default && ninja -C out/Default quic_client quic_server net_unittests
+   gn gen out/Default && ninja -C out/Default quic_client quic_server
    ```
 
-From then on you can follow the usual Chromium instructions for playing with the
-toy client and server:
+Newly Added Command Line Options
+--------------------------------
+1. (only quic_client) --iteration_num=1,2,3, ... N
+   It indicates the number of request. 
 
-https://www.chromium.org/quic/playing-with-quic
+2. (only quic_client) --unit=1 or 2 or 3
+   A scale of time that elpased for downloading. 1 for milleseconds, 2 for microseconds and 3 for nanosecods unit.  
+
+3. (only quic_client) --interval_msec=100
+   The interval for assigned milleseconds between each iteration. 
+
+4. --experiment_seq=1 or 2, ... Nth number
+   Assigining sequence nummber in order to distinguish expermients. This number will be writeen in file name.
+    
+5. --using_honest_fatal=1 or 0
+   HONEST_FATAL logs are suppressed by setting 0.
+
+
+honest.conf 
+-----------
+1. honest.conf is read in run-time to set below parametres easily.
+   ```
+   DefaultMaxPacketSize 1350
+   MaxPacketSize 1452
+   MtuDiscoveryTargetPacketSizeHigh 1450
+   MtuDiscoveryTargetPacketSizeLow 1430
+   DefaultNumConnections 1
+   PacingRate 1.25
+   UsingPacing 1
+   Granularity 100
+   ```
+
+
