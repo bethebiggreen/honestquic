@@ -6,17 +6,17 @@ Building on Linux
 
 1. Clone this repository:
    ```
-   git clone https://github.com/bethebiggreen/honestquic.git
-   cd honestquic/quic_sigcom_qoe_april/proto-quic_modified/
-   export PROTO_QUIC_ROOT=$PWD/src
-   export PATH=$PATH:$PWD/depot_tools
-   export CHROMIUM_BUILDTOOLS_PATH=$PROTO_QUIC_ROOT/buildtools
+   $ git clone https://github.com/bethebiggreen/honestquic.git
+   $ cd honestquic/quic_sigcom_qoe_april/proto-quic_modified/
+   $ export PROTO_QUIC_ROOT=$PWD/src
+   $ export PATH=$PATH:$PWD/depot_tools
+   $ export CHROMIUM_BUILDTOOLS_PATH=$PROTO_QUIC_ROOT/buildtools
    ```
 
 2. Build the QUIC client, server, and tests:
    ```
-   cd src
-   gn gen out/Default && ninja -C out/Default quic_client quic_server
+   $ cd src
+   $ gn gen out/Default && ninja -C out/Default quic_client quic_server
    ```
 
 
@@ -40,7 +40,8 @@ Newly Added Command Line Options
 
 honest.conf 
 -----------
-1. honest.conf is read in run-time to set below parametres easily.
+1. honest.conf is read in run-time to control parametres easily.
+2. honest.conf are filled as belows.
    ```
    DefaultMaxPacketSize 1350
    MaxPacketSize 1452
