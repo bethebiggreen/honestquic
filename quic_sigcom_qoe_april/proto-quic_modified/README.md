@@ -15,6 +15,7 @@ Building on Linux
 
 2. Build the QUIC client, server, and tests:
    ```
+   $ ./proto_quic_tools/sync.sh
    $ cd src
    $ gn gen out/Default && ninja -C out/Default quic_client quic_server
    ```
